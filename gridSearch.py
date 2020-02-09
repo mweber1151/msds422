@@ -49,13 +49,13 @@ class Grid:
     
 if __name__ == '__main__':
     n_estimators = [50, 100, 500, 1000]
-    max_depth = [2, 4, 7, 10, 15]
+    max_depth = [5, 10, None ]
     max_features = [5, 10, 15, 20, 30, 50]
     ##########################################
     #####          For Testing           #####
     ##########################################
     #n_estimators = [5, 10, 20]
-    #max_depth = [2, 4, 5]
+    #max_depth = [2, 4, None]
     #max_features = [5, 10, 15]
     
     params = (n_estimators, max_depth, max_features)

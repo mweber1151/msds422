@@ -12,8 +12,8 @@ from scipy import stats
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-from datetime import datetime
-
+from datetime import datetime       
+from sklearn.decomposition import PCA
 
 
 class MNIST:
@@ -37,7 +37,7 @@ class MNIST:
         start_time = datetime.now()
         print("Start Time: " + str(start_time))
         RFC = RandomForestClassifier(n_estimators=n_est, 
-                                     n_jobs=-1, 
+                                     n_jobs=-1
                                      )
         RFC.fit(X_train, y_train)
         y_pred = RFC.predict(X_test)
@@ -73,10 +73,25 @@ if __name__ == '__main__':
     X = train1.values
     test = pd.read_csv("/home/msweber/Documents/msds422/test.csv")
     X_val = test.values
-    mn = MNIST((X, y))
+    start_pca = datetime.now()
+    print("Start PCA Time: " + str(start_pca))
+    pca = PCA(n_components=0.95)
+    X_reduced = pca.fit_transform(X)
+    X_val_reduced = pca.transform(X_val)
+    end_pca = datetime.now()
+    print("End PCA Time: " + str(end_pca))
+    elapsed_pca = end_pca - start_pca
+    print("Elapsed PCA Time: " + str(elapsed_pca))
+    print(pca.components_)
+    print(pca.explained_variance_ratio_)
+    print(pca.n_components_)
+    mn = MNIST((X_reduced, y))
     RF, VA, ET = mn.cv(10, 500)
-    y_val = RF.predict(X_val)  
+    y_val = RF.predict(X_val_reduced)  
     pred_RF = pd.DataFrame({'ImageId' : range(1, len(y_val)+1), 'Label' : y_val})
-    pred_RF.to_csv('/home/msweber/Documents/msds422/pred_RF_WS.csv',
+    pred_RF.to_csv('/home/msweber/Documents/msds422/pred_PCA_RF.csv',
                    index = False)
-  
+
+
+
+ 
