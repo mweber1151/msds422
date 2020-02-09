@@ -77,6 +77,6 @@ if __name__ == '__main__':
     RF, VA, ET = mn.cv(10, 500)
     y_val = RF.predict(X_val)  
     pred_RF = pd.DataFrame({'ImageId' : range(1, len(y_val)+1), 'Label' : y_val})
-    pred_RF.to_csv('/home/msweber/Documents/msds422/pred_RF_WS.csv',
+    pred_RF.to_csv('/home/msweber/Documents/msds422/pred_RF.csv',
                    index = False)
   
