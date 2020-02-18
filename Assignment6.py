@@ -53,18 +53,523 @@ import math
 from datetime import datetime
 
 
-
 train = train = pd.read_csv("~/Documents/msds422/train.csv")
 test = pd.read_csv("~/Documents/msds422/test.csv")
 
+  
+###############################################################################
+############        2 Layer Dense Neural Network with Keras        ############
+###############################################################################
 
+y = train['label'].values
+X_train = train.drop(['label'], axis = 1).values
+X_train[3].shape
+
+X_val = test.values
+
+# Making sure that the values are float so that we can get decimal points after division
+X_train = X_train.astype('float32')
+X_val = X_val.astype('float32')
+# Normalizing the RGB codes by dividing it to the max RGB value.
+X_train /= 255
+X_val /= 255
+print('X_train shape:', X_train.shape)
+print('Number of images in X_train', X_train.shape[0])
+print('Number of images in X_val', X_val.shape[0])
+
+
+# Creating a Sequential Model and adding the layers
+model = Sequential()
+model.add(Dense(250, input_dim=784, activation=tf.nn.relu))
+model.add(Dropout(0.25))
+model.add(Dense(250, activation=tf.nn.relu))
+model.add(Dropout(0.25))
+model.add(Dense(10,activation=tf.nn.softmax))
+model._make_predict_function()
+model.summary()
+checkpoint = ModelCheckpoint(filepath='tf_dnn.h5', monitor='val_accuracy', 
+                             verbose=0, save_best_only=True, mode='max')
+callbacks_list = [checkpoint]
+model.compile(optimizer='adam', 
+              loss='sparse_categorical_crossentropy', 
+              metrics=['accuracy'])
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+sess = tf.Session(config=config) 
+tf.global_variables_initializer()
+start_time = datetime.now()
+print("Start Time: " + str(start_time))
+with tf.Session() as sess:
+    sess.run(tf.global_variables_initializer())
+    history = model.fit(x=X_train,y=y, epochs=100, validation_split=0.20,
+                        batch_size=128, verbose=1, callbacks = callbacks_list)
+    y_pred = model.predict(X_val)
+end_time = datetime.now()
+print("End Time: " + str(end_time))
+DNN_time = end_time - start_time
+print("2 Layer Dense Neural Network with Keras Elapsed Time: " + str(DNN_time))
+
+y_val = pd.DataFrame({'ImageId' : range(1, len(y_pred)+1), 
+                       'Label' : np.argmax(y_pred, axis=1)})
+y_val.to_csv('tf_dnn.csv', index = False)
+ 
+
+# list all data in history
+print(history.history.keys())
+# summarize history for accuracy
+plt.plot(history.history['acc'])
+plt.plot(history.history['val_acc'])
+plt.title('tf_dnn model accuracy')
+plt.ylabel('accuracy')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='upper left')
+plt.show()
+# summarize history for loss
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('tf_dnn model loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='upper left')
+plt.show()
+
+tf_dnn_accuracy = np.max(history.history['acc'])
+tf_dnn_val_acc = np.max(history.history['val_acc'])
+
+
+###############################################################################
+############  2 Layer Dense Neural Network with Keras (Tapered)    ############
+###############################################################################
+
+y = train['label'].values
+X_train = train.drop(['label'], axis = 1).values
+X_train[3].shape
+
+X_val = test.values
+
+# Making sure that the values are float so that we can get decimal points after division
+X_train = X_train.astype('float32')
+X_val = X_val.astype('float32')
+# Normalizing the RGB codes by dividing it to the max RGB value.
+X_train /= 255
+X_val /= 255
+print('X_train shape:', X_train.shape)
+print('Number of images in X_train', X_train.shape[0])
+print('Number of images in X_val', X_val.shape[0])
+
+
+# Creating a Sequential Model and adding the layers
+model = Sequential()
+model.add(Dense(250, input_dim=784, activation=tf.nn.relu))
+model.add(Dropout(0.25))
+model.add(Dense(100, activation=tf.nn.relu))
+model.add(Dropout(0.25))
+model.add(Dense(10,activation=tf.nn.softmax))
+model._make_predict_function()
+model.summary()
+checkpoint = ModelCheckpoint(filepath='tf_dnn_tapered.h5', monitor='val_accuracy', 
+                             verbose=0, save_best_only=True, mode='min')
+callbacks_list = [checkpoint]
+model.compile(optimizer='adam', 
+              loss='sparse_categorical_crossentropy', 
+              metrics=['accuracy'])
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+sess = tf.Session(config=config) 
+tf.global_variables_initializer
+start_time = datetime.now()
+print("Start Time: " + str(start_time))
+with tf.Session() as sess:
+    sess.run(tf.global_variables_initializer())
+    history = model.fit(x=X_train,y=y, epochs=100, validation_split=0.20,
+                        batch_size=128, verbose=1, callbacks = callbacks_list)
+    y_pred = model.predict(X_val)
+end_time = datetime.now()
+print("End Time: " + str(end_time))
+DNN_Tapered_time = end_time - start_time
+print("2 Layer Dense Neural Network with Keras (Tapered) Elapsed Time: " + str(DNN_Tapered_time))
+
+
+y_val = pd.DataFrame({'ImageId' : range(1, len(y_pred)+1), 
+                       'Label' : np.argmax(y_pred, axis=1)})
+y_val.to_csv('tf_dnn_tapered.csv', index = False)
+
+# list all data in history
+print(history.history.keys())
+# summarize history for accuracy
+plt.plot(history.history['acc'])
+plt.plot(history.history['val_acc'])
+plt.title('tf_dnn_tapered model accuracy')
+plt.ylabel('accuracy')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='lower right')
+plt.show()
+# summarize history for loss
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('tf_dnn_tapered model loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='upper left')
+plt.show()
+
+tf_dnn_taper_accuracy = np.max(history.history['acc'])
+tf_dnn_taper_val_acc = np.max(history.history['val_acc'])
+###############################################################################
+############        5 Layer Dense Neural Network with Keras        ############
+###############################################################################
+
+y = train['label'].values
+X_train = train.drop(['label'], axis = 1).values
+X_train[3].shape
+
+X_val = test.values
+
+# Making sure that the values are float so that we can get decimal points after division
+X_train = X_train.astype('float32')
+X_val = X_val.astype('float32')
+# Normalizing the RGB codes by dividing it to the max RGB value.
+X_train /= 255
+X_val /= 255
+print('X_train shape:', X_train.shape)
+print('Number of images in X_train', X_train.shape[0])
+print('Number of images in X_val', X_val.shape[0])
+
+
+# Creating a Sequential Model and adding the layers
+model = Sequential()
+model.add(Dense(250, input_dim=784, activation=tf.nn.relu))
+model.add(Dropout(0.25))
+model.add(Dense(250, activation=tf.nn.relu))
+model.add(Dropout(0.25))
+model.add(Dense(250, activation=tf.nn.relu))
+model.add(Dropout(0.25))
+model.add(Dense(250, activation=tf.nn.relu))
+model.add(Dropout(0.25))
+model.add(Dense(250, activation=tf.nn.relu))
+model.add(Dropout(0.25))
+model.add(Dense(10,activation=tf.nn.softmax))
+model.summary()
+checkpoint = ModelCheckpoint(filepath='tf_5L_dnn.h5', monitor='val_accuracy', 
+                             verbose=0, save_best_only=True, mode='min')
+callbacks_list = [checkpoint]
+model.compile(optimizer='adam', 
+              loss='sparse_categorical_crossentropy', 
+              metrics=['accuracy'])
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+sess = tf.Session(config=config) 
+tf.global_variables_initializer
+start_time = datetime.now()
+print("Start Time: " + str(start_time))
+with tf.Session() as sess:
+    sess.run(tf.global_variables_initializer())
+    history = model.fit(x=X_train,y=y, epochs=100, validation_split=0.20,
+                        batch_size=128, verbose=1, callbacks = callbacks_list)
+    y_pred = model.predict(X_val)
+end_time = datetime.now()
+print("End Time: " + str(end_time))
+DNN_5L_time = end_time - start_time
+print("5 Layer Dense Neural Network with Keras Elapsed Time: " + str(DNN_5L_time))
+
+y_val = pd.DataFrame({'ImageId' : range(1, len(y_pred)+1), 
+                       'Label' : np.argmax(y_pred, axis=1)})
+y_val.to_csv('tf_5L_dnn.csv', index = False)
+
+# list all data in history
+print(history.history.keys())
+# summarize history for accuracy
+plt.plot(history.history['acc'])
+plt.plot(history.history['val_acc'])
+plt.title('tf_5L_dnn model accuracy')
+plt.ylabel('accuracy')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='upper left')
+plt.show()
+# summarize history for loss
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('tf_5L_dnn model loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='upper left')
+plt.show()
+
+tf_5L_dnn_accuracy = np.max(history.history['acc'])
+tf_5L_dnn_val_acc = np.max(history.history['val_acc'])
+###############################################################################
+############  5 Layer Dense Neural Network with Keras (Tapered)    ############
+###############################################################################
+
+y = train['label'].values
+X_train = train.drop(['label'], axis = 1).values
+X_train[3].shape
+
+X_val = test.values
+
+# Making sure that the values are float so that we can get decimal points after division
+X_train = X_train.astype('float32')
+X_val = X_val.astype('float32')
+# Normalizing the RGB codes by dividing it to the max RGB value.
+X_train /= 255
+X_val /= 255
+print('X_train shape:', X_train.shape)
+print('Number of images in X_train', X_train.shape[0])
+print('Number of images in X_val', X_val.shape[0])
+
+
+# Creating a Sequential Model and adding the layers
+model = Sequential()
+model.add(Dense(250, input_dim=784, activation=tf.nn.relu))
+model.add(Dropout(0.25))
+model.add(Dense(200, activation=tf.nn.relu))
+model.add(Dropout(0.25))
+model.add(Dense(150, activation=tf.nn.relu))
+model.add(Dropout(0.25))
+model.add(Dense(100, activation=tf.nn.relu))
+model.add(Dropout(0.25))
+model.add(Dense(50, activation=tf.nn.relu))
+model.add(Dropout(0.25))
+model.add(Dense(10,activation=tf.nn.softmax))
+model.summary()
+checkpoint = ModelCheckpoint(filepath='tf_5L_dnn_tapered.h5', monitor='val_accuracy', 
+                             verbose=0, save_best_only=True, mode='min')
+callbacks_list = [checkpoint]
+model.compile(optimizer='adam', 
+              loss='sparse_categorical_crossentropy', 
+              metrics=['accuracy'])
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+sess = tf.Session(config=config) 
+tf.global_variables_initializer
+start_time = datetime.now()
+print("Start Time: " + str(start_time))
+with tf.Session() as sess:
+    sess.run(tf.global_variables_initializer())
+    history = model.fit(x=X_train,y=y, epochs=100, validation_split=0.20,
+                        batch_size=128, verbose=1, callbacks = callbacks_list)
+    y_pred = model.predict(X_val)
+end_time = datetime.now()
+print("End Time: " + str(end_time))
+DNN_5L_Tapered_time = end_time - start_time
+print("5 Layer Dense Neural Network with Keras (Tapered) Elapsed Time: " + str(DNN_5L_Tapered_time))
+
+y_val = pd.DataFrame({'ImageId' : range(1, len(y_pred)+1), 
+                       'Label' : np.argmax(y_pred, axis=1)})
+y_val.to_csv('tf_5L_dnn_tapered.csv', index = False)
+
+# list all data in history
+print(history.history.keys())
+# summarize history for accuracy
+plt.plot(history.history['acc'])
+plt.plot(history.history['val_acc'])
+plt.title('tf_dnn_tapered model accuracy')
+plt.ylabel('accuracy')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='upper left')
+plt.show()
+# summarize history for loss
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('tf_dnn_tapered model loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='upper left')
+plt.show()
+
+
+tf_5L_taper_dnn_accuracy = np.max(history.history['acc'])
+tf_5L_taper_dnn_val_acc = np.max(history.history['val_acc'])
+
+
+###############################################################################
+############          2D Convolutional Network with Keras          ############
+###############################################################################
+
+y = train['label'].values
+X_train = train.drop(['label'], axis = 1).values
+X_train = X_train.reshape(42000, 28, 28)
+X_train[3].shape
+
+X_val = test.values
+X_val = X_val.reshape(28000, 28, 28)
+
+# Reshaping the array to 4-dims so that it can work with the Keras API
+X_train = X_train.reshape(X_train.shape[0], 28, 28, 1)
+X_val = X_val.reshape(X_val.shape[0], 28, 28, 1)
+input_shape = (28, 28, 1)
+# Making sure that the values are float so that we can get decimal points after division
+X_train = X_train.astype('float32')
+X_val = X_val.astype('float32')
+# Normalizing the RGB codes by dividing it to the max RGB value.
+X_train /= 255
+X_val /= 255
+print('X_train shape:', X_train.shape)
+print('Number of images in X_train', X_train.shape[0])
+print('Number of images in X_val', X_val.shape[0])
+
+# Creating a Sequential Model and adding the layers
+model = Sequential()
+model.add(Conv2D(28, kernel_size=(3,3), input_shape=input_shape))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Flatten()) # Flattening the 2D arrays for fully connected layers
+model.add(Dense(128, activation=tf.nn.relu))
+model.add(Dropout(0.25))
+model.add(Dense(10,activation=tf.nn.softmax))
+model.summary()
+checkpoint = ModelCheckpoint(filepath='keras_nn.csv.h5', monitor='val_accuracy', 
+                             verbose=0, save_best_only=True, mode='min')
+callbacks_list = [checkpoint]
+model.compile(optimizer='adam', 
+              loss='sparse_categorical_crossentropy', 
+              metrics=['accuracy'])
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+sess = tf.Session(config=config) 
+tf.global_variables_initializer
+start_time = datetime.now()
+print("Start Time: " + str(start_time))
+with tf.Session() as sess:
+    sess.run(tf.global_variables_initializer())
+    history = model.fit(x=X_train,y=y, epochs=100, validation_split=0.20,
+                        batch_size=128, verbose=1, callbacks = callbacks_list)
+    y_pred = model.predict(X_val)
+end_time = datetime.now()
+print("End Time: " + str(end_time))
+CNN_time = end_time - start_time
+print("2D Convolutional Neural Network Elapsed Time: " + str(CNN_time))
+
+y_val = pd.DataFrame({'ImageId' : range(1, len(y_pred)+1), 
+                       'Label' : np.argmax(y_pred, axis=1)})
+y_val.to_csv('keras_nn.csv', index = False)
+
+# list all data in history
+print(history.history.keys())
+# summarize history for accuracy
+plt.plot(history.history['acc'])
+plt.plot(history.history['val_acc'])
+plt.title('keras cnn model accuracy')
+plt.ylabel('accuracy')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='upper left')
+plt.show()
+# summarize history for loss
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('keras cnn model loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='upper left')
+plt.show()
+
+cnn2_accuracy = np.max(history.history['acc'])
+cnn2_val_acc = np.max(history.history['val_acc'])
+
+###############################################################################
+############       2D 5L Convolutional Network with Keras          ############
+###############################################################################
+
+y = train['label'].values
+X_train = train.drop(['label'], axis = 1).values
+X_train = X_train.reshape(42000, 28, 28)
+X_train[3].shape
+
+X_val = test.values
+X_val = X_val.reshape(28000, 28, 28)
+
+# Reshaping the array to 4-dims so that it can work with the Keras API
+X_train = X_train.reshape(X_train.shape[0], 28, 28, 1)
+X_val = X_val.reshape(X_val.shape[0], 28, 28, 1)
+input_shape = (28, 28, 1)
+# Making sure that the values are float so that we can get decimal points after division
+X_train = X_train.astype('float32')
+X_val = X_val.astype('float32')
+# Normalizing the RGB codes by dividing it to the max RGB value.
+X_train /= 255
+X_val /= 255
+print('X_train shape:', X_train.shape)
+print('Number of images in X_train', X_train.shape[0])
+print('Number of images in X_val', X_val.shape[0])
+
+# Creating a Sequential Model and adding the layers
+model = Sequential()
+model.add(Conv2D(28, kernel_size=(3,3), input_shape=input_shape))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Flatten()) # Flattening the 2D arrays for fully connected layers
+model.add(Dense(650, activation=tf.nn.relu))
+model.add(Dropout(0.25))
+model.add(Dense(450, activation=tf.nn.relu))
+model.add(Dropout(0.25))
+model.add(Dense(300, activation=tf.nn.relu))
+model.add(Dropout(0.25))
+model.add(Dense(150, activation=tf.nn.relu))
+model.add(Dropout(0.25))
+model.add(Dense(10,activation=tf.nn.softmax))
+model.summary()
+checkpoint = ModelCheckpoint(filepath='keras_5Lnn.csv.h5', monitor='val_accuracy', 
+                             verbose=0, save_best_only=True, mode='min')
+callbacks_list = [checkpoint]
+model.compile(optimizer='adam', 
+              loss='sparse_categorical_crossentropy', 
+              metrics=['accuracy'])
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+sess = tf.Session(config=config) 
+tf.global_variables_initializer
+start_time = datetime.now()
+print("Start Time: " + str(start_time))
+with tf.Session() as sess:
+    sess.run(tf.global_variables_initializer())
+    history = model.fit(x=X_train,y=y, epochs=100, validation_split=0.20,
+                        batch_size=128, verbose=1, callbacks = callbacks_list)
+    y_pred = model.predict(X_val)
+end_time = datetime.now()
+print("End Time: " + str(end_time))
+CNN_5L_time = end_time - start_time
+print("2D 5L Convolutional Neural Network Elapsed Time: " + str(CNN_5L_time))
+
+y_val = pd.DataFrame({'ImageId' : range(1, len(y_pred)+1), 
+                       'Label' : np.argmax(y_pred, axis=1)})
+y_val.to_csv('keras_5Lnn.csv', index = False)
+
+# list all data in history
+print(history.history.keys())
+# summarize history for accuracy
+plt.plot(history.history['acc'])
+plt.plot(history.history['val_acc'])
+plt.title('keras 5L cnn model accuracy')
+plt.ylabel('accuracy')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='lower right')
+plt.show()
+# summarize history for loss
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('keras 5Lcnn model loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='lower right')
+plt.show()
+
+cnn5_accuracy = np.max(history.history['acc'])
+cnn5_val_acc = np.max(history.history['val_acc'])
+
+'''
+###############################################################################
+############                Plot Image for Testing                 ############
+###############################################################################
+
+image_index = 11651
+plt.imshow(X_val[image_index].reshape(28, 28),cmap='Greys')
+pred = model.predict(X_val[image_index].reshape(1, 28, 28, 1))
+print(pred.argmax())
 
 
 ###############################################################################
 ###########  Multilayer Perceptron Benchmark 2 layers x 500 nodes  ############
 ###############################################################################
 # 
-'''
+
 
 y = train['label'].values
 X_train = train.drop(['label'], axis = 1).values/255
@@ -144,521 +649,4 @@ with tf.Session() as sess:
     Z = logits.eval(feed_dict={X: X_new_scaled})
     y_pred = np.argmax(Z)
 
-'''    
-###############################################################################
-############        2 Layer Dense Neural Network with Keras        ############
-###############################################################################
-
-y = train['label'].values
-X_train = train.drop(['label'], axis = 1).values
-X_train[3].shape
-
-X_val = test.values
-
-# Making sure that the values are float so that we can get decimal points after division
-X_train = X_train.astype('float32')
-X_val = X_val.astype('float32')
-# Normalizing the RGB codes by dividing it to the max RGB value.
-X_train /= 255
-X_val /= 255
-print('X_train shape:', X_train.shape)
-print('Number of images in X_train', X_train.shape[0])
-print('Number of images in X_val', X_val.shape[0])
-
-
-# Creating a Sequential Model and adding the layers
-model = Sequential()
-model.add(Dense(250, input_dim=784, activation=tf.nn.relu))
-model.add(Dropout(0.25))
-model.add(Dense(250, activation=tf.nn.relu))
-model.add(Dropout(0.25))
-model.add(Dense(10,activation=tf.nn.softmax))
-model._make_predict_function()
-model.summary()
-checkpoint = ModelCheckpoint(filepath='tf_dnn.h5', monitor='val_accuracy', 
-                             verbose=0, save_best_only=True, mode='min')
-callbacks_list = [checkpoint]
-model.compile(optimizer='adam', 
-              loss='sparse_categorical_crossentropy', 
-              metrics=['accuracy'])
-config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
-sess = tf.Session(config=config) 
-tf.global_variables_initializer
-start_time = datetime.now()
-print("Start Time: " + str(start_time))
-with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer())
-    history = model.fit(x=X_train,y=y, epochs=50, validation_split=0.20,
-                        verbose=1, callbacks = callbacks_list)
-end_time = datetime.now()
-print("End Time: " + str(end_time))
-DNN_time = end_time - start_time
-print("2 Layer Dense Neural Network with Keras Elapsed Time: " + str(DNN_time))
-
-y_pred = model.predict(X_val)
-y_val = pd.DataFrame({'ImageId' : range(1, len(y_pred)+1), 
-                       'Label' : np.argmax(y_pred, axis=1)})
-y_val.to_csv('tf_dnn.csv', index = False)
- 
-
-# list all data in history
-print(history.history.keys())
-# summarize history for accuracy
-plt.plot(history.history['accuracy'])
-plt.plot(history.history['val_accuracy'])
-plt.title('tf_dnn model accuracy')
-plt.ylabel('accuracy')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()
-# summarize history for loss
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('tf_dnn model loss')
-plt.ylabel('loss')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()
-
-tf_dnn_accuracy = np.max(history.history['accuracy'])
-tf_dnn_val_acc = np.max(history.history['val_accuracy'])
-###############################################################################
-############  2 Layer Dense Neural Network with Keras (Tapered)    ############
-###############################################################################
-
-y = train['label'].values
-X_train = train.drop(['label'], axis = 1).values
-X_train[3].shape
-
-X_val = test.values
-
-# Making sure that the values are float so that we can get decimal points after division
-X_train = X_train.astype('float32')
-X_val = X_val.astype('float32')
-# Normalizing the RGB codes by dividing it to the max RGB value.
-X_train /= 255
-X_val /= 255
-print('X_train shape:', X_train.shape)
-print('Number of images in X_train', X_train.shape[0])
-print('Number of images in X_val', X_val.shape[0])
-
-
-# Creating a Sequential Model and adding the layers
-model = Sequential()
-model.add(Dense(250, input_dim=784, activation=tf.nn.relu))
-model.add(Dropout(0.25))
-model.add(Dense(100, activation=tf.nn.relu))
-model.add(Dropout(0.25))
-model.add(Dense(10,activation=tf.nn.softmax))
-model._make_predict_function()
-model.summary()
-checkpoint = ModelCheckpoint(filepath='tf_dnn_tapered.h5', monitor='val_accuracy', 
-                             verbose=0, save_best_only=True, mode='min')
-callbacks_list = [checkpoint]
-model.compile(optimizer='adam', 
-              loss='sparse_categorical_crossentropy', 
-              metrics=['accuracy'])
-config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
-sess = tf.Session(config=config) 
-tf.global_variables_initializer
-start_time = datetime.now()
-print("Start Time: " + str(start_time))
-with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer())
-    history = model.fit(x=X_train,y=y, epochs=50, validation_split=0.20,
-                        verbose=1, callbacks = callbacks_list)
-end_time = datetime.now()
-print("End Time: " + str(end_time))
-DNN_Tapered_time = end_time - start_time
-print("2 Layer Dense Neural Network with Keras (Tapered) Elapsed Time: " + str(DNN_Tapered_time))
-
-y_pred = model.predict(X_val)
-y_val = pd.DataFrame({'ImageId' : range(1, len(y_pred)+1), 
-                       'Label' : np.argmax(y_pred, axis=1)})
-y_val.to_csv('tf_dnn_tapered.csv', index = False)
-
-# list all data in history
-print(history.history.keys())
-# summarize history for accuracy
-plt.plot(history.history['accuracy'])
-plt.plot(history.history['val_accuracy'])
-plt.title('tf_dnn_tapered model accuracy')
-plt.ylabel('accuracy')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()
-# summarize history for loss
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('tf_dnn_tapered model loss')
-plt.ylabel('loss')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()
-
-tf_dnn_taper_accuracy = np.max(history.history['accuracy'])
-tf_dnn_taper_val_acc = np.max(history.history['val_accuracy'])
-###############################################################################
-############        5 Layer Dense Neural Network with Keras        ############
-###############################################################################
-
-y = train['label'].values
-X_train = train.drop(['label'], axis = 1).values
-X_train[3].shape
-
-X_val = test.values
-
-# Making sure that the values are float so that we can get decimal points after division
-X_train = X_train.astype('float32')
-X_val = X_val.astype('float32')
-# Normalizing the RGB codes by dividing it to the max RGB value.
-X_train /= 255
-X_val /= 255
-print('X_train shape:', X_train.shape)
-print('Number of images in X_train', X_train.shape[0])
-print('Number of images in X_val', X_val.shape[0])
-
-
-# Creating a Sequential Model and adding the layers
-model = Sequential()
-model.add(Dense(250, input_dim=784, activation=tf.nn.relu))
-model.add(Dropout(0.25))
-model.add(Dense(250, activation=tf.nn.relu))
-model.add(Dropout(0.25))
-model.add(Dense(250, activation=tf.nn.relu))
-model.add(Dropout(0.25))
-model.add(Dense(250, activation=tf.nn.relu))
-model.add(Dropout(0.25))
-model.add(Dense(250, activation=tf.nn.relu))
-model.add(Dropout(0.25))
-model.add(Dense(10,activation=tf.nn.softmax))
-model.summary()
-checkpoint = ModelCheckpoint(filepath='tf_5L_dnn.h5', monitor='val_accuracy', 
-                             verbose=0, save_best_only=True, mode='min')
-callbacks_list = [checkpoint]
-model.compile(optimizer='adam', 
-              loss='sparse_categorical_crossentropy', 
-              metrics=['accuracy'])
-config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
-sess = tf.Session(config=config) 
-tf.global_variables_initializer
-start_time = datetime.now()
-print("Start Time: " + str(start_time))
-with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer())
-    history = model.fit(x=X_train,y=y, epochs=50, validation_split=0.20,
-                        verbose=1, callbacks = callbacks_list)
-end_time = datetime.now()
-print("End Time: " + str(end_time))
-DNN_5L_time = end_time - start_time
-print("5 Layer Dense Neural Network with Keras Elapsed Time: " + str(DNN_5L_time))
-
-y_pred = model.predict(X_val)
-y_val = pd.DataFrame({'ImageId' : range(1, len(y_pred)+1), 
-                       'Label' : np.argmax(y_pred, axis=1)})
-y_val.to_csv('tf_5L_dnn.csv', index = False)
-
-# list all data in history
-print(history.history.keys())
-# summarize history for accuracy
-plt.plot(history.history['accuracy'])
-plt.plot(history.history['val_accuracy'])
-plt.title('tf_5L_dnn model accuracy')
-plt.ylabel('accuracy')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()
-# summarize history for loss
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('tf_5L_dnn model loss')
-plt.ylabel('loss')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()
-
-tf_5L_dnn_accuracy = np.max(history.history['accuracy'])
-tf_5L_dnn_val_acc = np.max(history.history['val_accuracy'])
-###############################################################################
-############  5 Layer Dense Neural Network with Keras (Tapered)    ############
-###############################################################################
-
-y = train['label'].values
-X_train = train.drop(['label'], axis = 1).values
-X_train[3].shape
-
-X_val = test.values
-
-# Making sure that the values are float so that we can get decimal points after division
-X_train = X_train.astype('float32')
-X_val = X_val.astype('float32')
-# Normalizing the RGB codes by dividing it to the max RGB value.
-X_train /= 255
-X_val /= 255
-print('X_train shape:', X_train.shape)
-print('Number of images in X_train', X_train.shape[0])
-print('Number of images in X_val', X_val.shape[0])
-
-
-# Creating a Sequential Model and adding the layers
-model = Sequential()
-model.add(Dense(250, input_dim=784, activation=tf.nn.relu))
-model.add(Dropout(0.25))
-model.add(Dense(200, activation=tf.nn.relu))
-model.add(Dropout(0.25))
-model.add(Dense(150, activation=tf.nn.relu))
-model.add(Dropout(0.25))
-model.add(Dense(100, activation=tf.nn.relu))
-model.add(Dropout(0.25))
-model.add(Dense(50, activation=tf.nn.relu))
-model.add(Dropout(0.25))
-model.add(Dense(10,activation=tf.nn.softmax))
-model.summary()
-checkpoint = ModelCheckpoint(filepath='tf_5L_dnn_tapered.h5', monitor='val_accuracy', 
-                             verbose=0, save_best_only=True, mode='min')
-callbacks_list = [checkpoint]
-model.compile(optimizer='adam', 
-              loss='sparse_categorical_crossentropy', 
-              metrics=['accuracy'])
-config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
-sess = tf.Session(config=config) 
-tf.global_variables_initializer
-start_time = datetime.now()
-print("Start Time: " + str(start_time))
-with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer())
-    history = model.fit(x=X_train,y=y, epochs=50, validation_split=0.20,
-                        verbose=1, callbacks = callbacks_list)
-end_time = datetime.now()
-print("End Time: " + str(end_time))
-DNN_5L_Tapered_time = end_time - start_time
-print("5 Layer Dense Neural Network with Keras (Tapered) Elapsed Time: " + str(DNN_5L_Tapered_time))
-
-y_pred = model.predict(X_val)
-y_val = pd.DataFrame({'ImageId' : range(1, len(y_pred)+1), 
-                       'Label' : np.argmax(y_pred, axis=1)})
-y_val.to_csv('tf_5L_dnn_tapered.csv', index = False)
-
-# list all data in history
-print(history.history.keys())
-# summarize history for accuracy
-plt.plot(history.history['accuracy'])
-plt.plot(history.history['val_accuracy'])
-plt.title('tf_dnn_tapered model accuracy')
-plt.ylabel('accuracy')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()
-# summarize history for loss
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('tf_dnn_tapered model loss')
-plt.ylabel('loss')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()
-
-
-tf_5L_taper_dnn_accuracy = np.max(history.history['accuracy'])
-tf_5L_taper_dnn_val_acc = np.max(history.history['val_accuracy'])
-'''
-
-###############################################################################
-############          2D Convolutional Network with Keras          ############
-###############################################################################
-
-y = train['label'].values
-X_train = train.drop(['label'], axis = 1).values
-X_train = X_train.reshape(42000, 28, 28)
-X_train[3].shape
-
-
-X_val = test.values
-X_val = X_val.reshape(28000, 28, 28)
-
-
-image_index = np.random.random_integers(0,42000)
-print(y[image_index]) # The label is 8
-plt.imshow(X_train[image_index], cmap='Greys')
-
-
-# Reshaping the array to 4-dims so that it can work with the Keras API
-X_train = X_train.reshape(X_train.shape[0], 28, 28, 1)
-X_val = X_val.reshape(X_val.shape[0], 28, 28, 1)
-input_shape = (28, 28, 1)
-# Making sure that the values are float so that we can get decimal points after division
-X_train = X_train.astype('float32')
-X_val = X_val.astype('float32')
-# Normalizing the RGB codes by dividing it to the max RGB value.
-X_train /= 255
-X_val /= 255
-print('X_train shape:', X_train.shape)
-print('Number of images in X_train', X_train.shape[0])
-print('Number of images in X_val', X_val.shape[0])
-
-
-# Creating a Sequential Model and adding the layers
-model = Sequential()
-model.add(Conv2D(28, kernel_size=(3,3), input_shape=input_shape))
-model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Flatten()) # Flattening the 2D arrays for fully connected layers
-model.add(Dense(128, activation=tf.nn.relu))
-model.add(Dropout(0.25))
-model.add(Dense(10,activation=tf.nn.softmax))
-model.summary()
-checkpoint = ModelCheckpoint(filepath='keras_nn.csv.h5', monitor='val_accuracy', 
-                             verbose=0, save_best_only=True, mode='min')
-callbacks_list = [checkpoint]
-model.compile(optimizer='adam', 
-              loss='sparse_categorical_crossentropy', 
-              metrics=['accuracy'])
-config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
-sess = tf.Session(config=config) 
-tf.global_variables_initializer
-start_time = datetime.now()
-print("Start Time: " + str(start_time))
-with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer())
-    history = model.fit(x=X_train,y=y, epochs=100, validation_split=0.20,
-                        verbose=1, callbacks = callbacks_list)
-end_time = datetime.now()
-print("End Time: " + str(end_time))
-CNN_time = end_time - start_time
-print("2D Convolutional Neural Network Elapsed Time: " + str(CNN_time))
-
-y_pred = model.predict(X_val)
-y_val = pd.DataFrame({'ImageId' : range(1, len(y_pred)+1), 
-                       'Label' : np.argmax(y_pred, axis=1)})
-y_val.to_csv('keras_nn.csv', index = False)
-
-# list all data in history
-print(history.history.keys())
-# summarize history for accuracy
-plt.plot(history.history['accuracy'])
-plt.plot(history.history['val_accuracy'])
-plt.title('keras cnn model accuracy')
-plt.ylabel('accuracy')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()
-# summarize history for loss
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('keras cnn model loss')
-plt.ylabel('loss')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()
-
-
-
-###############################################################################
-############       2D 5L Convolutional Network with Keras          ############
-###############################################################################
-
-y = train['label'].values
-X_train = train.drop(['label'], axis = 1).values
-X_train = X_train.reshape(42000, 28, 28)
-X_train[3].shape
-
-
-X_val = test.values
-X_val = X_val.reshape(28000, 28, 28)
-
-
-image_index = np.random.random_integers(0,42000)
-print(y[image_index]) # The label is 8
-plt.imshow(X_train[image_index], cmap='Greys')
-
-
-# Reshaping the array to 4-dims so that it can work with the Keras API
-X_train = X_train.reshape(X_train.shape[0], 28, 28, 1)
-X_val = X_val.reshape(X_val.shape[0], 28, 28, 1)
-input_shape = (28, 28, 1)
-# Making sure that the values are float so that we can get decimal points after division
-X_train = X_train.astype('float32')
-X_val = X_val.astype('float32')
-# Normalizing the RGB codes by dividing it to the max RGB value.
-X_train /= 255
-X_val /= 255
-print('X_train shape:', X_train.shape)
-print('Number of images in X_train', X_train.shape[0])
-print('Number of images in X_val', X_val.shape[0])
-
-
-# Creating a Sequential Model and adding the layers
-model = Sequential()
-model.add(Conv2D(28, kernel_size=(3,3), input_shape=input_shape))
-model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Flatten()) # Flattening the 2D arrays for fully connected layers
-model.add(Dense(650, activation=tf.nn.relu))
-model.add(Dropout(0.25))
-model.add(Dense(450, activation=tf.nn.relu))
-model.add(Dropout(0.25))
-model.add(Dense(300, activation=tf.nn.relu))
-model.add(Dropout(0.25))
-model.add(Dense(150, activation=tf.nn.relu))
-model.add(Dropout(0.25))
-model.add(Dense(10,activation=tf.nn.softmax))
-model.summary()
-checkpoint = ModelCheckpoint(filepath='keras_5Lnn.csv.h5', monitor='val_accuracy', 
-                             verbose=0, save_best_only=True, mode='min')
-callbacks_list = [checkpoint]
-model.compile(optimizer='adam', 
-              loss='sparse_categorical_crossentropy', 
-              metrics=['accuracy'])
-config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
-sess = tf.Session(config=config) 
-tf.global_variables_initializer
-start_time = datetime.now()
-print("Start Time: " + str(start_time))
-with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer())
-    history = model.fit(x=X_train,y=y, epochs=100, validation_split=0.20,
-                        verbose=1, callbacks = callbacks_list)
-end_time = datetime.now()
-print("End Time: " + str(end_time))
-CNN_5L_time = end_time - start_time
-print("2D 5L Convolutional Neural Network Elapsed Time: " + str(CNN_5L_time))
-
-y_pred = model.predict(X_val)
-y_val = pd.DataFrame({'ImageId' : range(1, len(y_pred)+1), 
-                       'Label' : np.argmax(y_pred, axis=1)})
-y_val.to_csv('keras_5Lnn.csv', index = False)
-
-# list all data in history
-print(history.history.keys())
-# summarize history for accuracy
-plt.plot(history.history['accuracy'])
-plt.plot(history.history['val_accuracy'])
-plt.title('keras 5L cnn model accuracy')
-plt.ylabel('accuracy')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()
-# summarize history for loss
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('keras 5Lcnn model loss')
-plt.ylabel('loss')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()
-
-'''
-###############################################################################
-############                Plot Image for Testing                 ############
-###############################################################################
-
-
-
-image_index = 11651
-plt.imshow(X_val[image_index].reshape(28, 28),cmap='Greys')
-pred = model.predict(X_val[image_index].reshape(1, 28, 28, 1))
-print(pred.argmax())
+'''  
